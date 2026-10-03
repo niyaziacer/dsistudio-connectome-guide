@@ -57,35 +57,40 @@ Skip steps 4–7 and compute the matrix directly from the `whole_brain` row (ste
 
 ## Script usage
 
-Run the commands **inside this repository's folder**, not inside the DSI Studio folder.
-
-> **File-name warning:** `s05_connectome_HCP-MMP_ntracts.mat` in the examples must match the name **you** saved with *Save matrix* in DSI Studio. If it differs (e.g. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`), put your own file name in `--mat`. If you get it wrong, the script lists the `.mat` files in that folder.
-
-**Windows PowerShell** (one line; use your own paths):
+The script turns the `.mat` saved by DSI Studio into the graph file and 2D/3D images. **In Windows PowerShell**, first edit only the paths in the 4 lines below (`USER` and the file name), then paste the commands **as they are**.
 
 ```powershell
-cd C:\Users\USER\Desktop\son_dti_kurs\dsistudio-connectome-guide
-pip install -r requirements.txt
-python scripts\connectome_tools.py all --mat "C:\Users\USER\Desktop\son_dti_kurs\s05_connectome_HCP-MMP_ntracts.mat" --atlas-dir "C:\Users\USER\Desktop\son_dti_kurs\dsi_studio_win\atlas\human" --prefix s05
+# 1) Edit these 4 lines for your machine
+$repo  = "C:\Users\USER\Desktop\son_dti_kurs\dsistudio-connectome-guide"
+$mat   = "C:\Users\USER\Desktop\son_dti_kurs\YOUR_SAVED_FILE.mat"
+$atlas = "C:\Users\USER\Desktop\son_dti_kurs\dsi_studio_win\atlas\human"
+$tt    = "C:\Users\USER\Desktop\son_dti_kurs\s05_autotrack_99bundles.tt.gz"
 ```
 
-A trailing `\` is bash (Linux/macOS) syntax; in PowerShell write the command on one line (or continue lines with a backtick `` ` ``). Replace placeholders such as `X.mat`, `...` and `C:/Users/ben` with your real paths.
+```powershell
+# 2) Paste these unchanged
+cd $repo
+pip install -r requirements.txt
+python scripts\connectome_tools.py all --mat $mat --atlas-dir $atlas --prefix s05
+```
 
-**Linux / macOS / Git Bash:**
+`$mat` must be the full path of the file **you** saved with *Save matrix* in DSI Studio (e.g. `...\Commissure_CorpusCallosum_Body_HCP-MMP.mat`). If it is wrong, the script lists the `.mat` files in that folder. Run the commands inside this repository's folder, not the DSI Studio folder (`cd $repo` does that).
+
+`all` is enough. The following are optional, each doing one part of `all` or an extra analysis; paste them unchanged with the same variables:
+
+```powershell
+python scripts\connectome_tools.py inspect  --mat $mat                                  # list matrices in the .mat
+python scripts\connectome_tools.py graphmat --mat $mat --prefix s05                      # only the Visualize Graph .mat
+python scripts\connectome_tools.py plot     --mat $mat --atlas-dir $atlas --prefix s05   # only the 2D/3D images
+python scripts\connectome_tools.py metrics  --mat $mat --atlas-dir $atlas --prefix s05   # node metrics CSV
+python scripts\connectome_tools.py qc       --tt $tt                                     # tract/bundle QC
+```
+
+**Linux / macOS / Git Bash** (a trailing `\` is bash syntax):
 
 ```bash
-python scripts/connectome_tools.py all --mat ~/s05_connectome_HCP-MMP_ntracts.mat \
+python scripts/connectome_tools.py all --mat ~/YOUR_SAVED_FILE.mat \
     --atlas-dir "<dsi_studio>/atlas/human" --prefix s05
-```
-
-Other subcommands:
-
-```text
-python scripts/connectome_tools.py inspect  --mat X.mat
-python scripts/connectome_tools.py graphmat --mat X.mat --prefix s05
-python scripts/connectome_tools.py plot     --mat X.mat --atlas-dir <atlas/human> --top-edges 400
-python scripts/connectome_tools.py metrics  --mat X.mat --atlas-dir <atlas/human> --prefix s05
-python scripts/connectome_tools.py qc       --tt s05_autotrack_99bundles.tt.gz
 ```
 
 Nodes = atlas-region centroids (MNI), size = strength, orange = left, blue = right; lines = strongest `--top-edges` connections. Tests: `pytest -q`.

@@ -69,38 +69,43 @@ Bu DSI Studio sürümünde *Save matrix* dosyası "Visualize Graph" için gereke
 
 ## Betik kullanımı
 
-Komutları **bu deponun klasöründe** çalıştırın (indirdiğiniz/ayıkladığınız `dsistudio-connectome-guide` klasörü), DSI Studio klasöründe değil.
-
-> **Dosya adı uyarısı:** Aşağıdaki örneklerdeki `s05_connectome_HCP-MMP_ntracts.mat`, DSI Studio'da *Save matrix* ile **sizin** kaydettiğiniz dosyanın adıyla aynı olmalıdır. Farklıysa (ör. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`) `--mat` yoluna kendi dosya adınızı yazın. Yanlış yazarsanız betik, klasördeki `.mat` dosyalarını listeler.
-
-**Windows PowerShell** (tek satır; kendi yollarınızı yazın):
+Betik, DSI Studio'nun kaydettiği `.mat` dosyasından graph dosyasını ve 2B/3B resimleri üretir. **Windows PowerShell'de** önce aşağıdaki 4 satırda yalnızca yazılı yolları kendi bilgisayarınıza göre düzenleyin (`KULLANICI` ve dosya adı), sonra komutları **aynen** yapıştırın.
 
 ```powershell
-cd C:\Users\KULLANICI\Desktop\son_dti_kurs\dsistudio-connectome-guide
-pip install -r requirements.txt
-python scripts\connectome_tools.py all --mat "C:\Users\KULLANICI\Desktop\son_dti_kurs\s05_connectome_HCP-MMP_ntracts.mat" --atlas-dir "C:\Users\KULLANICI\Desktop\son_dti_kurs\dsi_studio_win\atlas\human" --prefix s05
+# 1) Bu 4 satırı kendinize göre düzenleyin
+$repo  = "C:\Users\KULLANICI\Desktop\son_dti_kurs\dsistudio-connectome-guide"
+$mat   = "C:\Users\KULLANICI\Desktop\son_dti_kurs\KAYDETTIGINIZ_DOSYA.mat"
+$atlas = "C:\Users\KULLANICI\Desktop\son_dti_kurs\dsi_studio_win\atlas\human"
+$tt    = "C:\Users\KULLANICI\Desktop\son_dti_kurs\s05_autotrack_99bundles.tt.gz"
 ```
 
-Satır sonundaki `\` işareti Linux/macOS (bash) içindir; PowerShell'de komutu tek satırda yazın (satır bölmek için `` ` `` kullanılır). `X.mat`, `...` ve `C:/Users/ben` yazılarını kendi dosya/klasör yollarınızla değiştirin.
+```powershell
+# 2) Bunları aynen yapıştırın (düzenlemeyin)
+cd $repo
+pip install -r requirements.txt
+python scripts\connectome_tools.py all --mat $mat --atlas-dir $atlas --prefix s05
+```
 
-**Linux / macOS / Git Bash:**
+`$mat`, DSI Studio'da *Save matrix* ile **sizin** kaydettiğiniz dosyanın tam yolu olmalıdır (ör. `...\Commissure_CorpusCallosum_Body_HCP-MMP.mat`). Yanlış yazarsanız betik, o klasördeki `.mat` dosyalarını listeler. Komutları DSI Studio klasöründe değil, **bu deponun klasöründe** çalıştırın (yukarıdaki `cd $repo` bunu yapar).
+
+`all` komutu yeterlidir. Aşağıdakiler isteğe bağlıdır ve her biri `all`'ın bir parçasını ya da ek bir analizi tek başına yapar; aynı değişkenlerle (`$mat`, `$atlas`, `$tt`) aynen yapıştırabilirsiniz:
+
+```powershell
+python scripts\connectome_tools.py inspect  --mat $mat                                  # .mat içindeki matrisleri listeler
+python scripts\connectome_tools.py graphmat --mat $mat --prefix s05                      # yalnız Visualize Graph için .mat
+python scripts\connectome_tools.py plot     --mat $mat --atlas-dir $atlas --prefix s05   # yalnız 2B/3B resim
+python scripts\connectome_tools.py metrics  --mat $mat --atlas-dir $atlas --prefix s05   # düğüm metrikleri CSV
+python scripts\connectome_tools.py qc       --tt $tt                                     # trakt/demet kalite kontrolü
+```
+
+**Linux / macOS / Git Bash** için aynı komutlar (satır sonundaki `\` bash içindir):
 
 ```bash
 pip install -r requirements.txt
 python scripts/connectome_tools.py all \
-    --mat  ~/s05_connectome_HCP-MMP_ntracts.mat \
+    --mat  ~/KAYDETTIGINIZ_DOSYA.mat \
     --atlas-dir "<dsi_studio>/atlas/human" \
     --prefix s05
-```
-
-Diğer alt komutlar (`--mat`/`--tt` yollarını kendinize göre yazın):
-
-```text
-python scripts/connectome_tools.py inspect  --mat s05_connectome_HCP-MMP_ntracts.mat
-python scripts/connectome_tools.py graphmat --mat s05_connectome_HCP-MMP_ntracts.mat --prefix s05
-python scripts/connectome_tools.py plot     --mat s05_connectome_HCP-MMP_ntracts.mat --atlas-dir <atlas/human> --prefix s05 --top-edges 400
-python scripts/connectome_tools.py metrics  --mat s05_connectome_HCP-MMP_ntracts.mat --atlas-dir <atlas/human> --prefix s05
-python scripts/connectome_tools.py qc       --tt  s05_autotrack_99bundles.tt.gz
 ```
 
 Çizim: düğüm = atlas bölgesinin ağırlık merkezi (MNI), boyut = güç (strength), turuncu = sol, mavi = sağ yarıküre; çizgi = en güçlü `--top-edges` bağlantı. Örnekler: [`examples/`](examples).
