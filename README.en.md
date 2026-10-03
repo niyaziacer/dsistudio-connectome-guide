@@ -9,6 +9,16 @@ A step-by-step guide plus small Python scripts to go from the **Step T3 `.qsdr.f
 > **Scope:** guide + Python scripts. DSI Studio command-line automation is **out of scope**; DSI Studio steps are done in the GUI.
 > **Data:** this repository contains no patient/subject data and must never receive any (see [Privacy](#privacy)).
 
+## Short route (fastest)
+
+1. Open the `.qsdr.fz`, run **Fiber Tracking** (`whole_brain`).
+2. **Step T3a > Atlas… > HCP-MMP > Select All > Add** (360 regions).
+3. **Tracts > Connectivity matrix** > metric **number of tracts** > **Recalculate** > **Save matrix**.
+4. **Tracts > Visualize Graph…** and pick the file you just saved (**Region Rendering ✔, Tract Rendering ☐**).
+5. Optional: the [script](#script-usage) (`all`) for 2D/3D pictures and metrics.
+
+This route was tried with the current DSI Studio build (downloaded 3 October 2026); if an older build gives *"Cannot find a matrix named connectivity"* at step 4, see the note under step 10 of the [Full route](#full-route-verified-end-to-end) ("Why the script?"). If you also need the 99-bundle `.tt.gz`, follow the [Full route](#full-route-verified-end-to-end). That the short route gives the same matrix as the full route was tested on one subject only; see the [Fast route](#fast-route-shorter) section.
+
 ## Outputs
 
 Example prefix `s05` (use your own).

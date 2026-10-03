@@ -9,6 +9,16 @@ DSI Studio'da **Step T3** aşamasındaki `.qsdr.fz` dosyasından başlayıp **99
 > **Kapsam:** Rehber + Python betikleri. DSI Studio komut satırı otomasyonu (`dsi_studio --action=...`) **kapsam dışıdır**; DSI Studio adımları arayüzden yapılır.
 > **Veri:** Bu depoda hiçbir hasta/denek verisi yoktur ve olmamalıdır (bkz. [Gizlilik](#gizlilik)).
 
+## Kısa yol (en hızlı)
+
+1. `.qsdr.fz` dosyasını açın, **Fiber Tracking** yapın (`whole_brain`).
+2. **Step T3a > Atlas… > HCP-MMP > Select All > Add** (360 bölge).
+3. **Tracts > Connectivity matrix** > ölçü **number of tracts** > **Recalculate** > **Save matrix**.
+4. **Tracts > Visualize Graph…** ile kaydettiğiniz dosyayı seçin (**Region Rendering ✔, Tract Rendering ☐**).
+5. İsteğe bağlı: 2B/3B resimler ve metrikler için [betik](#betik-kullanımı) (`all`).
+
+Bu yol, güncel DSI Studio derlemesiyle (3 Ekim 2026'da indirilen) denendi; eski derlemelerde 4. adımda *"Cannot find a matrix named connectivity"* hatası çıkarsa [bu bölüme](#neden-4-dosya-betik) bakın. 99 demetlik `.tt.gz` dosyasına da ihtiyacınız varsa [Tam yol](#tam-yol-doğrulanmış) bölümünü izleyin. Kısa yolun tam yolla aynı matrisi verdiği tek bir birey üzerinde denendi, ayrıntı [Hızlı yol](#hızlı-yol-daha-kısa) bölümünde.
+
 ## Ne üretir?
 
 Örnek önek: `s05` (kendi önekinizle değiştirin).
