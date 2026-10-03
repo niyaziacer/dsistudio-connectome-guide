@@ -327,7 +327,22 @@ def build_parser():
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
-    return args.fn(args)
+    try:
+        return args.fn(args)
+    except FileNotFoundError as e:
+        missing = Path(e.filename) if e.filename else None
+        print(f"HATA: dosya bulunamadi: {missing}", file=sys.stderr)
+        if missing is not None and missing.parent.is_dir():
+            cands = sorted(p.name for p in missing.parent.glob("*" + missing.suffix))[:15]
+            if cands:
+                print(f"\nBu klasordeki '{missing.suffix}' dosyalari:", file=sys.stderr)
+                for c in cands:
+                    print(f"  {c}", file=sys.stderr)
+                print("\nDSI Studio dosyayi kaydederken sectiginiz adi kullanir; --mat yolunu bunlardan biriyle degistirin.",
+                      file=sys.stderr)
+        elif missing is not None:
+            print(f"Klasor de yok: {missing.parent}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

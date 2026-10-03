@@ -92,3 +92,10 @@ def test_metrics_cli(data, tmp_path):
     rc = ct.main(["metrics", "--mat", str(mat), "--atlas-dir", str(ad), "--atlas", "TEST",
                   "--prefix", "s05", "--outdir", str(tmp_path)])
     assert rc == 0 and (tmp_path / "s05_node_metrics.csv").exists()
+
+
+def test_missing_file_gives_friendly_error(tmp_path, capsys):
+    (tmp_path / "gercek.mat").write_bytes(b"x")
+    rc = ct.main(["inspect", "--mat", str(tmp_path / "yok.mat")])
+    err = capsys.readouterr().err
+    assert rc == 2 and "gercek.mat" in err

@@ -34,21 +34,23 @@ Ek (isteğe bağlı): `s05_..._t2r.txt` (Tract-To-Region), `s05_node_metrics.csv
 
 Aşağıdaki sıra bu çalışmada uçtan uca denenmiştir (175.693 trakt → 99 demet → 360×360 matris).
 
-1. **Dosyayı açın:** DSI Studio'da Step T3'te `…_s05.qsdr.fz`. *Step T3a*'da atlas `human`, *Step T3c*'de kalite "Low Quality (Fast)" kalabilir.
+1. **Dosyayı açın:** DSI Studio'da Step T3'te `…_s05.qsdr.fz`. *Step T3a*'da atlas klasörü `human` seçili olsun; *Step T3c*'de kalite "Low Quality (Fast)" kalabilir.
 2. **Fiber Tracking** (*Step T3d*): tüm beyin traktografisi (`whole_brain`).
-3. **Tracts Misc > Recognize and Cluster** → 99 isimli demet oluşur.
+3. **HCP-MMP bölgelerini yükleyin** (*Step T3a: Assign Regions*): **Atlas…** düğmesine tıklayın → listeden **HCP-MMP** seçin (1) → **Select All** (2) → **Add** (3). Sol panele 360 bölge (`L_V1` … `R_p24`) gelir. **Add** kullanın, *Merge&Add* değil (o, hepsini tek bölgede birleştirir). Bu adım 5. adımdaki T2R için gereklidir.
+   ![](docs/images/03b_atlas_hcp_mmp_select_all.jpg)
+4. **Tracts Misc > Recognize and Cluster** → 99 isimli demet oluşur.
    ![](docs/images/02_recognize_cluster.jpg)
-4. **Regions > Tract-To-Region Connectome (T2R)** → sonucu `_t2r.txt` olarak kaydedin (isteğe bağlı).
+5. **Regions > Tract-To-Region Connectome (T2R)** → sonucu `_t2r.txt` olarak kaydedin (isteğe bağlı).
    ![](docs/images/03_regions_menu_t2r.jpg)
-5. **Tracts > Save All Tracts As…** → `s05_autotrack_99bundles.tt.gz` (yanına `.tt.gz.txt` otomatik yazılır). Bu yedek, sonraki Merge adımından önce alınır.
+6. **Tracts > Save All Tracts As…** → `s05_autotrack_99bundles.tt.gz` (yanına `.tt.gz.txt` otomatik yazılır). Bu yedek, sonraki Merge adımından önce alınır.
    ![](docs/images/06_tracts_menusu.jpg)
-6. **Tracts > Merge All** → tüm demetler tek satırda birleşir. *Konnektivite matrisi yalnızca seçili satırdaki traktlardan hesaplanır*; birleştirmezseniz matris birkaç yüz trakttan çıkar ve çok seyrek olur.
+7. **Tracts > Merge All** → tüm demetler tek satırda birleşir. *Konnektivite matrisi yalnızca seçili satırdaki traktlardan hesaplanır*; birleştirmezseniz matris birkaç yüz trakttan çıkar ve çok seyrek olur.
    ![](docs/images/05_merge_all_sonrasi.jpg)
-7. **Tracts > Connectivity matrix:** *Parcellation Atlas* = **HCP-MMP** (listede yanlış atlas seçmek kolaydır — kontrol edin), *pass region*, *value: number of tracts* → **Recalculate** → **Save matrix** → `s05_connectome_HCP-MMP_ntracts.mat`.
+8. **Tracts > Connectivity matrix:** *Parcellation Atlas* = **HCP-MMP** (listede yanlış atlas seçmek kolaydır — kontrol edin), *pass region*, *value: number of tracts* → **Recalculate** → **Save matrix** → `s05_connectome_HCP-MMP_ntracts.mat`. DSI Studio kayıt penceresinde kendi önerdiği bir ad (ör. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`) gösterebilir; bu ad birleştirilmiş satırın adından gelir ve matris yine tüm izden hesaplanmıştır. İsterseniz adı değiştirin, hangi adla kaydettiyseniz 9. adımda `--mat` yoluna onu yazın.
    ![](docs/images/07_atlas_secimi.jpg)
    ![](docs/images/08_matris_hesaplandi.jpg)
-8. **Betiği çalıştırın** (aşağıda) → graph `.mat` + 2B/3B PNG.
-9. **Tracts > Visualize Graph…** → `s05_HCP-MMP_connectivity_for_graph.mat`. *Step T3c: Options*'ta **Region Rendering ✔, Tract Rendering ☐** yapın → kapak görüntüsü.
+9. **Betiği çalıştırın** (aşağıda) → graph `.mat` + 2B/3B PNG.
+10. **Tracts > Visualize Graph…** → `s05_HCP-MMP_connectivity_for_graph.mat`. *Step T3c: Options*'ta **Region Rendering ✔, Tract Rendering ☐** yapın → kapak görüntüsü.
    ![](docs/images/09_visualize_graph_dosya.jpg)
 
 ### Neden 4. dosya (betik)?
@@ -59,7 +61,7 @@ Bu DSI Studio sürümünde *Save matrix* dosyası "Visualize Graph" için gereke
 
 ## Hızlı yol (daha kısa)
 
-3–6. adımları atlayıp **doğrudan `whole_brain` satırıyla** 7–9'a geçebilirsiniz.
+4–7. adımları atlayıp **doğrudan `whole_brain` satırıyla** 8–10'a geçebilirsiniz (3. adımı yapmanız zarar vermez; matris için gerekli olduğunu düşünmüyorum, ama atlayarak denemedim).
 
 - **Neden aynı sonucu vermesi beklenir:** `s05` verisinde Recognize and Cluster, 175.693 traktın **tamamını** 99 demetten birine atadı (`.tt.gz` içindeki `cluster` alanı 0–98 arası, atanmamış trakt yok). Merge All bu demetleri geri birleştirdiğinden matrisin hesaplandığı trakt kümesi `whole_brain` ile aynıdır (aynı 175.693 trakt).
 - **Doğrulama durumu:** Brainnectome atlasıyla `whole_brain` satırından doğrudan matris alınıp çalıştığı görüldü. HCP-MMP ile bu kısayol arayüzde **ayrıca denenmedi**; yukarıdaki eşdeğerlik mantıksaldır. Siz denerseniz sonucu bir *issue* ile bildirin.
@@ -67,20 +69,38 @@ Bu DSI Studio sürümünde *Save matrix* dosyası "Visualize Graph" için gereke
 
 ## Betik kullanımı
 
+Komutları **bu deponun klasöründe** çalıştırın (indirdiğiniz/ayıkladığınız `dsistudio-connectome-guide` klasörü), DSI Studio klasöründe değil.
+
+> **Dosya adı uyarısı:** Aşağıdaki örneklerdeki `s05_connectome_HCP-MMP_ntracts.mat`, DSI Studio'da *Save matrix* ile **sizin** kaydettiğiniz dosyanın adıyla aynı olmalıdır. Farklıysa (ör. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`) `--mat` yoluna kendi dosya adınızı yazın. Yanlış yazarsanız betik, klasördeki `.mat` dosyalarını listeler.
+
+**Windows PowerShell** (tek satır; kendi yollarınızı yazın):
+
+```powershell
+cd C:\Users\KULLANICI\Desktop\son_dti_kurs\dsistudio-connectome-guide
+pip install -r requirements.txt
+python scripts\connectome_tools.py all --mat "C:\Users\KULLANICI\Desktop\son_dti_kurs\s05_connectome_HCP-MMP_ntracts.mat" --atlas-dir "C:\Users\KULLANICI\Desktop\son_dti_kurs\dsi_studio_win\atlas\human" --prefix s05
+```
+
+Satır sonundaki `\` işareti Linux/macOS (bash) içindir; PowerShell'de komutu tek satırda yazın (satır bölmek için `` ` `` kullanılır). `X.mat`, `...` ve `C:/Users/ben` yazılarını kendi dosya/klasör yollarınızla değiştirin.
+
+**Linux / macOS / Git Bash:**
+
 ```bash
 pip install -r requirements.txt
-
-# graph .mat + 2B + 3B PNG tek komutta
 python scripts/connectome_tools.py all \
-    --mat  C:/Users/ben/Desktop/s05_connectome_HCP-MMP_ntracts.mat \
-    --atlas-dir "C:/dsi_studio_win/atlas/human" \
+    --mat  ~/s05_connectome_HCP-MMP_ntracts.mat \
+    --atlas-dir "<dsi_studio>/atlas/human" \
     --prefix s05
+```
 
-python scripts/connectome_tools.py inspect --mat s05_connectome_HCP-MMP_ntracts.mat   # içindeki matrisleri listele
-python scripts/connectome_tools.py graphmat --mat X.mat --prefix s05                   # yalnız graph .mat
-python scripts/connectome_tools.py plot  --mat X.mat --atlas-dir ... --prefix s05 --top-edges 400
-python scripts/connectome_tools.py metrics --mat X.mat --atlas-dir ... --prefix s05    # düğüm metrikleri CSV
-python scripts/connectome_tools.py qc --tt s05_autotrack_99bundles.tt.gz              # trakt/demet kalite kontrolü
+Diğer alt komutlar (`--mat`/`--tt` yollarını kendinize göre yazın):
+
+```text
+python scripts/connectome_tools.py inspect  --mat s05_connectome_HCP-MMP_ntracts.mat
+python scripts/connectome_tools.py graphmat --mat s05_connectome_HCP-MMP_ntracts.mat --prefix s05
+python scripts/connectome_tools.py plot     --mat s05_connectome_HCP-MMP_ntracts.mat --atlas-dir <atlas/human> --prefix s05 --top-edges 400
+python scripts/connectome_tools.py metrics  --mat s05_connectome_HCP-MMP_ntracts.mat --atlas-dir <atlas/human> --prefix s05
+python scripts/connectome_tools.py qc       --tt  s05_autotrack_99bundles.tt.gz
 ```
 
 Çizim: düğüm = atlas bölgesinin ağırlık merkezi (MNI), boyut = güç (strength), turuncu = sol, mavi = sağ yarıküre; çizgi = en güçlü `--top-edges` bağlantı. Örnekler: [`examples/`](examples).

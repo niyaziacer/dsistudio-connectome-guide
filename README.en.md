@@ -36,19 +36,20 @@ Tested with 175,693 tracts → 99 bundles → 360×360 matrix. Screenshots are i
 
 1. Open `…_s05.qsdr.fz` in Step T3 (atlas `human` in Step T3a).
 2. **Fiber Tracking** (Step T3d): whole-brain tractography.
-3. **Tracts Misc > Recognize and Cluster** → 99 named bundles.
-4. *(optional)* **Regions > Tract-To-Region Connectome (T2R)** → save `_t2r.txt`.
-5. **Tracts > Save All Tracts As…** → `s05_autotrack_99bundles.tt.gz` (the `.tt.gz.txt` sidecar appears automatically). Do this *before* merging.
-6. **Tracts > Merge All** → one row. *The connectivity matrix is computed from the selected row only*; without merging you get a very sparse matrix from a few hundred tracts.
-7. **Tracts > Connectivity matrix:** *Parcellation Atlas* = **HCP-MMP** (the drop-down is easy to mis-click — verify), *pass region*, *value: number of tracts* → **Recalculate** → **Save matrix** → `s05_connectome_HCP-MMP_ntracts.mat`.
-8. **Run the script** (below) → graph `.mat` + 2D/3D PNGs.
-9. **Tracts > Visualize Graph…** → pick `s05_HCP-MMP_connectivity_for_graph.mat`. In *Step T3c: Options* tick **Region Rendering**, untick **Tract Rendering**.
+3. **Load the HCP-MMP regions** (*Step T3a: Assign Regions*): click **Atlas…** → pick **HCP-MMP** (1) → **Select All** (2) → **Add** (3). 360 regions (`L_V1` … `R_p24`) appear in the left panel. Use **Add**, not *Merge&Add* (that merges everything into one region). Needed for the T2R step. See `docs/images/03b_atlas_hcp_mmp_select_all.jpg`.
+4. **Tracts Misc > Recognize and Cluster** → 99 named bundles.
+5. *(optional)* **Regions > Tract-To-Region Connectome (T2R)** → save `_t2r.txt`.
+6. **Tracts > Save All Tracts As…** → `s05_autotrack_99bundles.tt.gz` (the `.tt.gz.txt` sidecar appears automatically). Do this *before* merging.
+7. **Tracts > Merge All** → one row. *The connectivity matrix is computed from the selected row only*; without merging you get a very sparse matrix from a few hundred tracts.
+8. **Tracts > Connectivity matrix:** *Parcellation Atlas* = **HCP-MMP** (the drop-down is easy to mis-click — verify), *pass region*, *value: number of tracts* → **Recalculate** → **Save matrix** → `s05_connectome_HCP-MMP_ntracts.mat`. DSI Studio's save dialog may suggest its own name (e.g. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`); it comes from the name of the merged row and the matrix is still computed from all tracts. Rename it if you like, and use whatever name you saved under in `--mat` in step 9.
+9. **Run the script** (below) → graph `.mat` + 2D/3D PNGs.
+10. **Tracts > Visualize Graph…** → pick `s05_HCP-MMP_connectivity_for_graph.mat`. In *Step T3c: Options* tick **Region Rendering**, untick **Tract Rendering**.
 
 **Why the script?** In this build the saved matrix file lacks the `connectivity` matrix that Visualize Graph needs ("Cannot find a matrix named connectivity"). `graphmat` rewrites `number of tracts r2r` under that name in DSI Studio's MATLAB v4 format (it matched a hand-made file byte-for-value on real data).
 
 ## Fast route (shorter)
 
-Skip steps 3–6 and compute the matrix directly from the `whole_brain` row.
+Skip steps 4–7 and compute the matrix directly from the `whole_brain` row (steps 8–10). Step 3 should not be needed for the matrix, but I have not tried skipping it.
 
 - **Why it should give the same matrix:** in `s05`, Recognize and Cluster assigned **all** 175,693 tracts to one of the 99 bundles (the `cluster` field in the `.tt.gz` is 0–98, none unassigned), and Merge All puts them back together, so the tract set is the same as `whole_brain`.
 - **Verification status:** worked directly on `whole_brain` with the Brainnectome atlas; **not tested separately in the GUI with HCP-MMP** (the equivalence above is logical). Please report results via an issue.
@@ -56,14 +57,35 @@ Skip steps 3–6 and compute the matrix directly from the `whole_brain` row.
 
 ## Script usage
 
+Run the commands **inside this repository's folder**, not inside the DSI Studio folder.
+
+> **File-name warning:** `s05_connectome_HCP-MMP_ntracts.mat` in the examples must match the name **you** saved with *Save matrix* in DSI Studio. If it differs (e.g. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`), put your own file name in `--mat`. If you get it wrong, the script lists the `.mat` files in that folder.
+
+**Windows PowerShell** (one line; use your own paths):
+
+```powershell
+cd C:\Users\USER\Desktop\son_dti_kurs\dsistudio-connectome-guide
+pip install -r requirements.txt
+python scripts\connectome_tools.py all --mat "C:\Users\USER\Desktop\son_dti_kurs\s05_connectome_HCP-MMP_ntracts.mat" --atlas-dir "C:\Users\USER\Desktop\son_dti_kurs\dsi_studio_win\atlas\human" --prefix s05
+```
+
+A trailing `\` is bash (Linux/macOS) syntax; in PowerShell write the command on one line (or continue lines with a backtick `` ` ``). Replace placeholders such as `X.mat`, `...` and `C:/Users/ben` with your real paths.
+
+**Linux / macOS / Git Bash:**
+
 ```bash
-python scripts/connectome_tools.py all --mat s05_connectome_HCP-MMP_ntracts.mat \
-    --atlas-dir "C:/dsi_studio_win/atlas/human" --prefix s05
-python scripts/connectome_tools.py inspect --mat X.mat
+python scripts/connectome_tools.py all --mat ~/s05_connectome_HCP-MMP_ntracts.mat \
+    --atlas-dir "<dsi_studio>/atlas/human" --prefix s05
+```
+
+Other subcommands:
+
+```text
+python scripts/connectome_tools.py inspect  --mat X.mat
 python scripts/connectome_tools.py graphmat --mat X.mat --prefix s05
-python scripts/connectome_tools.py plot    --mat X.mat --atlas-dir ... --top-edges 400
-python scripts/connectome_tools.py metrics --mat X.mat --atlas-dir ... --prefix s05
-python scripts/connectome_tools.py qc --tt s05_autotrack_99bundles.tt.gz
+python scripts/connectome_tools.py plot     --mat X.mat --atlas-dir <atlas/human> --top-edges 400
+python scripts/connectome_tools.py metrics  --mat X.mat --atlas-dir <atlas/human> --prefix s05
+python scripts/connectome_tools.py qc       --tt s05_autotrack_99bundles.tt.gz
 ```
 
 Nodes = atlas-region centroids (MNI), size = strength, orange = left, blue = right; lines = strongest `--top-edges` connections. Tests: `pytest -q`.
