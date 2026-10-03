@@ -57,9 +57,13 @@ Bu DSI Studio sürümünde *Save matrix* dosyası "Visualize Graph" için gereke
 ![](docs/images/10_hata_connectivity.jpg)
 `graphmat` alt komutu `number of tracts r2r` matrisini `connectivity` adıyla yeniden yazar. Bu, DSI Studio'nun yazdığı MATLAB v4 biçimiyle uyumludur (gerçek `s05` verisinde elle üretilen dosya ile birebir aynı sonuç verdi).
 
-## Hızlı yol (daha kısa, **henüz HCP-MMP'de doğrulanmadı**)
+## Hızlı yol (daha kısa)
 
-3–6. adımları atlayıp doğrudan `whole_brain` satırıyla 7–9'a geçmek mümkün olmalıdır; Brainnectome atlasıyla çalıştığı görülmüştü, **HCP-MMP ile denenmedi**. Bu yolda 1–2 numaralı dosyalar (99 demet) üretilmez. Deneyip sonucu bir *issue* ile bildirirseniz buraya işlenir.
+3–6. adımları atlayıp **doğrudan `whole_brain` satırıyla** 7–9'a geçebilirsiniz.
+
+- **Neden aynı sonucu vermesi beklenir:** `s05` verisinde Recognize and Cluster, 175.693 traktın **tamamını** 99 demetten birine atadı (`.tt.gz` içindeki `cluster` alanı 0–98 arası, atanmamış trakt yok). Merge All bu demetleri geri birleştirdiğinden matrisin hesaplandığı trakt kümesi `whole_brain` ile aynıdır (aynı 175.693 trakt).
+- **Doğrulama durumu:** Brainnectome atlasıyla `whole_brain` satırından doğrudan matris alınıp çalıştığı görüldü. HCP-MMP ile bu kısayol arayüzde **ayrıca denenmedi**; yukarıdaki eşdeğerlik mantıksaldır. Siz denerseniz sonucu bir *issue* ile bildirin.
+- **Ne kaybedilir:** 1–2 numaralı dosyalar (99 demet `.tt.gz` ve `.tt.gz.txt`) çıkmaz, çünkü Recognize and Cluster atlanır. Bu dosyalar `qc` komutu ve demet bazlı analiz için gereklidir.
 
 ## Betik kullanımı
 
@@ -76,6 +80,7 @@ python scripts/connectome_tools.py inspect --mat s05_connectome_HCP-MMP_ntracts.
 python scripts/connectome_tools.py graphmat --mat X.mat --prefix s05                   # yalnız graph .mat
 python scripts/connectome_tools.py plot  --mat X.mat --atlas-dir ... --prefix s05 --top-edges 400
 python scripts/connectome_tools.py metrics --mat X.mat --atlas-dir ... --prefix s05    # düğüm metrikleri CSV
+python scripts/connectome_tools.py qc --tt s05_autotrack_99bundles.tt.gz              # trakt/demet kalite kontrolü
 ```
 
 Çizim: düğüm = atlas bölgesinin ağırlık merkezi (MNI), boyut = güç (strength), turuncu = sol, mavi = sağ yarıküre; çizgi = en güçlü `--top-edges` bağlantı. Örnekler: [`examples/`](examples).
@@ -86,7 +91,11 @@ Testler: `pip install -r requirements-dev.txt && pytest -q`
 
 ## Sonra ne yapılır?
 
-1. **Kalite kontrolü (önce bunu yapın).** `metrics` çıktısındaki `interhemispheric_fraction` (sol↔sağ bağlantı payı) ve `density` değerlerine bakın. Örnek veride sol-sağ pay yalnızca ≈%2,3 çıktı; corpus callosum'un tipik payına göre düşük görünüyor. Bu bir parametre/pipeline sorusu olabilir (ör. *pass* ve *end* farkı, uzunluk eşikleri, atlasın yalnız korteks olması) — kendi verinizde de kontrol edip yorumlamadan önce nedenini anlayın.
+1. **Kalite kontrolü (önce bunu yapın).** `python scripts/connectome_tools.py qc --tt s05_autotrack_99bundles.tt.gz` komutu trakt uzunluklarını, komisural demetlerin payını ve her demette iki ucu **farklı yarıkürede** biten trakt oranını verir. Örnek `s05` verisinde:
+   - Komisural demetler traktların %19,8'i, ama matriste sol↔sağ bağlantı yalnızca toplam ağırlığın **%2,3**'ü.
+   - Bunun nedeni matris hesabı değil: `.tt.gz`'den matrisi bağımsız olarak yeniden hesapladığımızda (pass modu) DSI Studio matrisiyle korelasyon 0,98 ve aynı %2,3 çıktı.
+   - Asıl neden izlerin kısa/parçalı olması: Corpus Callosum Body için medyan uzunluk 52 mm ve traktların yalnızca %19'unun iki ucu karşı yarıkürede. Corpus callosum izleri karşı korteks etiketlerine varamadan bitiyor; sonuç olarak sol↔sağ bağlantılar matriste **eksik temsil ediliyor**.
+   - Bu nedenle bu veriden hemisferler arası bağlantı güçleri hakkında yorum yapmayın; yarıküre içi bağlantılar daha güvenilir. Traktografi parametreleri (minimum/maksimum uzunluk, QA eşiği, açı eşiği, adım boyu, seed sayısı) ve veri kalitesi (b-değeri, çözünürlük) etkili olabilir; bu parametrelerin etkisi bu depoda **denenmedi**.
 2. **Normalizasyon.** Ham "number of tracts" bölge hacmine, toplam trakt sayısına ve traktografi parametrelerine bağlıdır. Bireyler/gruplar arasında karşılaştırmadan önce normalize edin (ör. toplam trakta bölme, bölge boyutuna göre düzeltme) ya da DSI Studio'daki diğer ölçümleri (ör. *mean length*, QA/FA-ağırlıklı) kullanın.
 3. **Graf metrikleri.** Derece/güç, kümeleme katsayısı, global/yerel verimlilik, modülerlik, hub'lar. Hazır kütüphaneler: [bctpy](https://github.com/aestrivex/bctpy), [networkx](https://networkx.org). Eşikleme (ör. en güçlü %10 veya yoğunluk-eşleştirilmiş) sonuçları değiştirir; birden fazla eşikte sağlamlığı gösterin.
 4. **Demet bazlı analiz.** `.tt.gz` dosyasını DSI Studio'da açıp demet başına QA/FA/uzunluk istatistiklerini (Tracts > Statistics) alın; 99 demet adları `.tt.gz.txt` içindedir.

@@ -7,6 +7,7 @@ inspect   .mat dosyasindaki matrisleri listeler (boyut, toplam, dolu hucre sayis
 graphmat  "Visualize Graph" icin 'connectivity' adli matris iceren uyumlu bir .mat yazar.
 plot      Bolge merkezlerini top, baglantilari cizgi olarak 2B (3 gorunum) ve 3B PNG'ye cizer.
 all       graphmat + plot (en kisa yol).
+qc        .tt.gz uzerinden kalite kontrol (uzunluk, komisural demetler, karsi yariküreye ulasma).
 metrics   Dugum (bolge) bazinda derece/guc ve genel ozet metrikleri CSV'ye yazar.
 
 Ornek
@@ -209,6 +210,27 @@ def cmd_all(args) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- qc
+def cmd_qc(args) -> int:
+    from dsi_tt import qc_report, read_tt
+
+    t = read_tt(args.tt)
+    r = qc_report(t)
+    ln = r["length_mm"]
+    print(f"Trakt sayisi: {r['n_tracts']}")
+    print(f"Uzunluk (mm): ort {ln['mean']:.0f}, medyan {ln['median']:.0f}, p10 {ln['p10']:.0f}, p90 {ln['p90']:.0f}")
+    print(f"Iki ucu farkli yarikurede olan trakt: %{r['ends_opposite_hemispheres_pct']:.1f}")
+    print(f"Komisural demetlerin payi: %{r['commissure_share_pct']:.1f}")
+    print(f"\n{'demet':55s} {'n':>7s} {'pay%':>6s} {'med.uz.':>8s} {'karsi%':>7s}")
+    shown = [b for b in r["bundles"] if b["name"].startswith("Commissure")] + \
+            [b for b in r["bundles"] if not b["name"].startswith("Commissure")][:args.top]
+    for b in shown:
+        print(f"{b['name']:55s} {b['n']:7d} {b['share_pct']:6.1f} {b['median_length_mm']:8.0f} {b['ends_opposite_pct']:7.0f}")
+    print("\nYorum: callosal demetlerde 'karsi%' dusukse izler karsi yarikureye ulasamadan bitiyor "
+          "(kisa/parcali) -> konnektomda sol-sag baglanti payi dusuk cikar.")
+    return 0
+
+
 # --------------------------------------------------------------------------- metrics
 def node_metrics(M: np.ndarray, names: list[str]):
     """Temel agirlikli graf metrikleri (yalniz numpy). Dondurur: (satirlar, ozet sozlugu)."""
@@ -291,6 +313,11 @@ def build_parser():
     sp = sub.add_parser("all", help="graphmat + plot")
     common(sp, plot=True)
     sp.set_defaults(fn=cmd_all)
+
+    sp = sub.add_parser("qc", help=".tt.gz kalite kontrol")
+    sp.add_argument("--tt", required=True, help="DSI Studio .tt.gz (yaninda .tt.gz.txt varsa demet adlari okunur)")
+    sp.add_argument("--top", type=int, default=8, help="komisural olmayan en buyuk N demet de listelenir")
+    sp.set_defaults(fn=cmd_qc)
 
     sp = sub.add_parser("metrics", help="dugum metrikleri CSV")
     common(sp, plot=True)

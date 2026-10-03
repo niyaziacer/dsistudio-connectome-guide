@@ -11,4 +11,4 @@
 | `MATLAB v4 başlığı tanımlanamadı` | Dosya DSI Studio `.mat`'i değil veya bozuk | `inspect` ile kontrol edin; dosyayı yeniden kaydedin |
 | DSI Studio ikinci kez açılıp lisans penceresi çıkıyor | Uygulama yeni bir örnek başlattı | Çalışan pencereyi kullanın; yeni örnekte lisans koşullarını okuyup bilinçli karar verin |
 | Brainnectome'da 246 ↔ 248 bölge uyuşmazlığı | Atlas/sürüm farkı | Sun 2026.7.25 sürümünü deneyin; bu rehber HCP-MMP (360) için yazılmıştır |
-| Sol-sağ bağlantı payı çok düşük | Parametre/atlas/QC konusu | README → "Sonra ne yapılır?" madde 1 |
+| Sol-sağ bağlantı payı çok düşük | İzler kısa/parçalı, karşı yarıküre korteksine ulaşmıyor / streamlines too short | `connectome_tools.py qc --tt ...`; README → "Sonra ne yapılır?" madde 1 |

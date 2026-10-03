@@ -46,9 +46,13 @@ Tested with 175,693 tracts → 99 bundles → 360×360 matrix. Screenshots are i
 
 **Why the script?** In this build the saved matrix file lacks the `connectivity` matrix that Visualize Graph needs ("Cannot find a matrix named connectivity"). `graphmat` rewrites `number of tracts r2r` under that name in DSI Studio's MATLAB v4 format (it matched a hand-made file byte-for-value on real data).
 
-## Fast route (shorter, **not yet verified on HCP-MMP**)
+## Fast route (shorter)
 
-Skipping steps 3–6 and computing the matrix from the `whole_brain` row should work; it was seen working with the Brainnectome atlas, **not tested with HCP-MMP**, and it does not produce files 1–2. Please report results via an issue.
+Skip steps 3–6 and compute the matrix directly from the `whole_brain` row.
+
+- **Why it should give the same matrix:** in `s05`, Recognize and Cluster assigned **all** 175,693 tracts to one of the 99 bundles (the `cluster` field in the `.tt.gz` is 0–98, none unassigned), and Merge All puts them back together, so the tract set is the same as `whole_brain`.
+- **Verification status:** worked directly on `whole_brain` with the Brainnectome atlas; **not tested separately in the GUI with HCP-MMP** (the equivalence above is logical). Please report results via an issue.
+- **What you lose:** files 1–2 (the 99-bundle `.tt.gz` + `.tt.gz.txt`), which the `qc` command and bundle-level analyses need.
 
 ## Script usage
 
@@ -59,13 +63,18 @@ python scripts/connectome_tools.py inspect --mat X.mat
 python scripts/connectome_tools.py graphmat --mat X.mat --prefix s05
 python scripts/connectome_tools.py plot    --mat X.mat --atlas-dir ... --top-edges 400
 python scripts/connectome_tools.py metrics --mat X.mat --atlas-dir ... --prefix s05
+python scripts/connectome_tools.py qc --tt s05_autotrack_99bundles.tt.gz
 ```
 
 Nodes = atlas-region centroids (MNI), size = strength, orange = left, blue = right; lines = strongest `--top-edges` connections. Tests: `pytest -q`.
 
 ## What next?
 
-1. **QC first.** Check `interhemispheric_fraction` and `density` from `metrics`. In the example data the left↔right share was only ≈2.3 % — lower than I would expect given the corpus callosum. Understand why (pass vs. end, length thresholds, cortical-only atlas) before interpreting.
+1. **QC first.** `python scripts/connectome_tools.py qc --tt s05_autotrack_99bundles.tt.gz` reports tract lengths, the commissural share and, per bundle, the share of tracts whose two ends lie in **different hemispheres**. In the example `s05`:
+   - Commissural bundles are 19.8 % of tracts, yet left↔right edges make up only **2.3 %** of the matrix weight.
+   - This is not a matrix-computation error: recomputing the matrix independently from the `.tt.gz` (pass mode) correlated 0.98 with DSI Studio's and gave the same 2.3 %.
+   - The cause is short, fragmented streamlines: median 52 mm for Corpus Callosum Body, and only 19 % of its tracts end in the opposite hemisphere. Callosal streamlines stop before reaching the contralateral cortical labels, so interhemispheric connections are **under-represented**.
+   - Do not interpret interhemispheric connection strengths from this dataset; intrahemispheric edges are more trustworthy. Tracking parameters (min/max length, QA/angular threshold, step size, seed count) and data quality (b-value, resolution) may matter; their effect was **not tested** here.
 2. **Normalise.** Raw streamline counts depend on region size, total streamlines and tracking parameters.
 3. **Graph metrics** (strength, clustering, efficiency, modularity, hubs) with [bctpy](https://github.com/aestrivex/bctpy) or [networkx](https://networkx.org); report robustness across thresholds.
 4. **Bundle-level statistics** from the `.tt.gz` in DSI Studio (QA/FA/length per bundle).
