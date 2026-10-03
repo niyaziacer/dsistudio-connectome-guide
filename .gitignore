@@ -1,0 +1,25 @@
+# Hasta/denek verisi ASLA repoya girmemeli
+*.fz
+*.fib.gz
+*.src.gz
+*.tt.gz
+*.tt.gz.txt
+*.trk
+*.trk.gz
+*.nii
+*.nii.gz
+*.dcm
+*.mat
+!examples/**/*.mat
+*_t2r.txt
+dsi_studio_win/
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
