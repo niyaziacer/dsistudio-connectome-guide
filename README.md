@@ -18,7 +18,7 @@ DSI Studio'da **Step T3** aşamasındaki `.qsdr.fz` dosyasından başlayıp **99
 | 1 | `s05_autotrack_99bundles.tt.gz` | DSI Studio: *Recognize and Cluster* → *Tracts > Save All Tracts As* |
 | 2 | `s05_autotrack_99bundles.tt.gz.txt` | DSI Studio, `.tt.gz` ile birlikte **otomatik** yazar (demet adları/indeksleri) |
 | 3 | `s05_connectome_HCP-MMP_ntracts.mat` | DSI Studio: *Tracts > Connectivity matrix* → *Save matrix* |
-| 4 | `s05_HCP-MMP_connectivity_for_graph.mat` | **Betik** (`graphmat`) — Visualize Graph'ın istediği `connectivity` adlı matrisi içerir |
+| 4 | `s05_HCP-MMP_connectivity_for_graph.mat` | Yeni DSI Studio derlemesinde **gerekmez** (*Save matrix* dosyası zaten `connectivity` içerir). Eski derlemede **betik** (`graphmat`) üretir |
 | 5 | `s05_connectome_nodes_edges_2D.png` | **Betik** (`plot`) — 3 görünüm, top + kenar |
 | 6 | `s05_connectome_nodes_edges_3D.png` | **Betik** (`plot`) |
 
@@ -49,27 +49,31 @@ Aşağıdaki sıra bu çalışmada uçtan uca denenmiştir (175.693 trakt → 99
 8. **Tracts > Connectivity matrix:** *Parcellation Atlas* = **HCP-MMP** (listede yanlış atlas seçmek kolaydır — kontrol edin), *pass region*, *value: number of tracts* → **Recalculate** → **Save matrix** → `s05_connectome_HCP-MMP_ntracts.mat`. DSI Studio kayıt penceresinde kendi önerdiği bir ad (ör. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`) gösterebilir; bu ad birleştirilmiş satırın adından gelir ve matris yine tüm izden hesaplanmıştır. İsterseniz adı değiştirin, hangi adla kaydettiyseniz 9. adımda `--mat` yoluna onu yazın.
    ![](docs/images/07_atlas_secimi.jpg)
    ![](docs/images/08_matris_hesaplandi.jpg)
-9. **Betiği çalıştırın** (aşağıda) → graph `.mat` + 2B/3B PNG.
-10. **Tracts > Visualize Graph…** → `s05_HCP-MMP_connectivity_for_graph.mat`. *Step T3c: Options*'ta **Region Rendering ✔, Tract Rendering ☐** yapın → kapak görüntüsü.
+9. **Betiği çalıştırın** (aşağıda) → 2B/3B PNG (ve eski DSI Studio derlemesindeyseniz Visualize Graph için graph `.mat`).
+10. **Tracts > Visualize Graph…** → yeni derlemede 8. adımda kaydettiğiniz `.mat` dosyasını **doğrudan** seçin; eski derlemede `s05_HCP-MMP_connectivity_for_graph.mat`. *Step T3c: Options*'ta **Region Rendering ✔, Tract Rendering ☐** yapın → kapak görüntüsü.
    ![](docs/images/09_visualize_graph_dosya.jpg)
 
 ### Neden 4. dosya (betik)?
 
-Bu DSI Studio sürümünde *Save matrix* dosyası "Visualize Graph" için gereken `connectivity` adlı matrisi içermiyor ve şu hata çıkıyor: *"Cannot find a matrix named connectivity"*.
+Hou Jul 25 2026 derlemesinde *Save matrix* dosyası "Visualize Graph" için gereken `connectivity` adlı matrisi içermiyor ve şu hata çıkıyor: *"Cannot find a matrix named connectivity"*.
 ![](docs/images/10_hata_connectivity.jpg)
 `graphmat` alt komutu `number of tracts r2r` matrisini `connectivity` adıyla yeniden yazar. Bu, DSI Studio'nun yazdığı MATLAB v4 biçimiyle uyumludur (gerçek `s05` verisinde elle üretilen dosya ile birebir aynı sonuç verdi).
+
+> **DSI Studio tarafında düzeltildi.** Bu sorunu DSI Studio geliştiricisine bildirdik ([frankyeh/DSI-Studio#131](https://github.com/frankyeh/DSI-Studio/issues/131)). Geliştirici nedeni açıkladı: kayıt biçimi tüm metriklerin `r2r`/`t2r` matrislerini yazacak şekilde genişletilirken Visualize Graph'ın okuduğu eski `connectivity` girdisi düşmüş. Düzeltme `master` dalına işlendi: yeni derlemeler *Save matrix* ile **o anda seçili metriği** `connectivity` adıyla da yazıyor ve Visualize Graph bu dosyayı doğrudan açıyor. **3 Ekim 2026'da indirilen yeni derlemeyle doğrulandı:** ham *Save matrix* dosyası betik çalıştırılmadan Visualize Graph'ta açıldı. Dosyada 137 matris var (eski derlemede 136) ve `connectivity`, seçili ölçü olan `number of tracts r2r` ile birebir aynı. Kaydetmeden önce istediğiniz metriğin (*number of tracts*) seçili olduğundan emin olun. Eski bir derlemede aynı hatayı görürseniz betiği kullanın. Betik, **2B/3B resimler** (yan, ön, üst görünüm), düğüm metrikleri ve karşılaştırma için hâlâ gerekli.
+>
+> Kolaylık için `graphmat-surukle-birak.bat`: `.mat` dosyasını bu dosyanın üzerine sürükleyip bırakın, aynı klasörde `<ad>_for_graph.mat` oluşur (Python'un PATH'te olması gerekir; Windows'ta henüz geniş denenmedi).
 
 ## Hızlı yol (daha kısa)
 
 4–7. adımları atlayıp **doğrudan `whole_brain` satırıyla** 8–10'a geçebilirsiniz (3. adımı yapmanız zarar vermez; matris için gerekli olduğunu düşünmüyorum, ama atlayarak denemedim).
 
 - **Neden aynı sonucu vermesi beklenir:** `s05` verisinde Recognize and Cluster, 175.693 traktın **tamamını** 99 demetten birine atadı (`.tt.gz` içindeki `cluster` alanı 0–98 arası, atanmamış trakt yok). Merge All bu demetleri geri birleştirdiğinden matrisin hesaplandığı trakt kümesi `whole_brain` ile aynıdır (aynı 175.693 trakt).
-- **Doğrulama durumu:** Brainnectome atlasıyla `whole_brain` satırından doğrudan matris alınıp çalıştığı görüldü. HCP-MMP ile bu kısayol arayüzde **ayrıca denenmedi**; yukarıdaki eşdeğerlik mantıksaldır. Siz denerseniz sonucu bir *issue* ile bildirin.
+- **Doğrulama durumu:** HCP-MMP ile bu kısayol arayüzde denendi (aynı `s05` verisi, 4–7 atlanarak, 3. adım yapılarak). Tam yol ve hızlı yol matrisleri **iki ayrı izleme çalıştırmasından** geldiği için birebir aynı çıkmaz; `compare` komutu şunları verdi: toplam ağırlık oranı 0,996, Pearson r = 0,995, en güçlü 400 bağlantının %93'ü ortak, sol-sağ pay %2,43 ve %2,36. Spearman (0,89) ve kenar Jaccard (0,74) daha düşük çıktı; fark zayıf (az trakt geçen) bağlantılarda toplanıyor. **Test-tekrar kontrolü:** hızlı yolu ikinci kez, baştan izleme yaparak çalıştırınca (farklı bir DSI Studio derlemesiyle) iki hızlı matris arasındaki fark, tam yol ile hızlı yol arasındaki farkla aynı büyüklükte çıktı (Pearson 0,9955 / 0,9952; Spearman 0,888 / 0,889; Jaccard 0,735 / 0,736; en güçlü 400 bağlantıda ortaklık 0,935 / 0,932). Yani fark, adımların atlanmasından değil, izlemenin rastgeleliğinden geliyor görünüyor ve hızlı yol bu veride tam yolla aynı sonucu veriyor. Sınırlar: tek birey; ikinci çalıştırma farklı bir derlemeyle yapıldığı için derleme etkisi izleme etkisinden ayrılamıyor; çok sayıda zayıf bağlantı çalıştırmadan çalıştırmaya değişiyor, bu yüzden ikili (var/yok) grafik metriklerine temkinle yaklaşın.
 - **Ne kaybedilir:** 1–2 numaralı dosyalar (99 demet `.tt.gz` ve `.tt.gz.txt`) çıkmaz, çünkü Recognize and Cluster atlanır. Bu dosyalar `qc` komutu ve demet bazlı analiz için gereklidir.
 
 ## Betik kullanımı
 
-Betik, DSI Studio'nun kaydettiği `.mat` dosyasından graph dosyasını ve 2B/3B resimleri üretir. **Windows PowerShell'de** önce aşağıdaki 4 satırda yalnızca yazılı yolları kendi bilgisayarınıza göre düzenleyin (`KULLANICI` ve dosya adı), sonra komutları **aynen** yapıştırın.
+Betik, DSI Studio'nun kaydettiği `.mat` dosyasından 2B/3B resimleri (ve eski derlemeler için graph dosyasını) üretir. **Windows PowerShell'de** önce aşağıdaki 4 satırda yalnızca yazılı yolları kendi bilgisayarınıza göre düzenleyin (`KULLANICI` ve dosya adı), sonra komutları **aynen** yapıştırın.
 
 ```powershell
 # 1) Bu 4 satırı kendinize göre düzenleyin
@@ -96,6 +100,7 @@ python scripts\connectome_tools.py graphmat --mat $mat --prefix s05             
 python scripts\connectome_tools.py plot     --mat $mat --atlas-dir $atlas --prefix s05   # yalnız 2B/3B resim
 python scripts\connectome_tools.py metrics  --mat $mat --atlas-dir $atlas --prefix s05   # düğüm metrikleri CSV
 python scripts\connectome_tools.py qc       --tt $tt                                     # trakt/demet kalite kontrolü
+python scripts\connectome_tools.py compare  --mat $mat --mat2 $mat2 --atlas-dir $atlas    # iki matrisi karşılaştırır ($mat2: ikinci .mat)
 ```
 
 **Linux / macOS / Git Bash** için aynı komutlar (satır sonundaki `\` bash içindir):

@@ -9,6 +9,7 @@ plot      Bolge merkezlerini top, baglantilari cizgi olarak 2B (3 gorunum) ve 3B
 all       graphmat + plot (en kisa yol).
 qc        .tt.gz uzerinden kalite kontrol (uzunluk, komisural demetler, karsi yariküreye ulasma).
 metrics   Dugum (bolge) bazinda derece/guc ve genel ozet metrikleri CSV'ye yazar.
+compare   Iki baglanti matrisini karsilastirir (korelasyon, kenar ortusmesi, sol-sag pay).
 
 Ornek
 -----
@@ -280,6 +281,64 @@ def cmd_metrics(args) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- compare
+def _ranks(x: np.ndarray) -> np.ndarray:
+    order = np.argsort(x, kind="mergesort")
+    r = np.empty(len(x))
+    r[order] = np.arange(len(x))
+    return r
+
+
+def compare_matrices(A: np.ndarray, B: np.ndarray, top: int = 400) -> dict:
+    """Iki simetrik matrisi ust ucgen uzerinden karsilastirir (yalniz numpy)."""
+    if A.shape != B.shape:
+        raise SystemExit(f"Boyutlar farkli: {A.shape} ve {B.shape}")
+    A = (A + A.T) / 2
+    B = (B + B.T) / 2
+    iu = np.triu_indices(len(A), 1)
+    a, b = A[iu], B[iu]
+    nz = (a > 0) | (b > 0)
+    pear = float(np.corrcoef(a[nz], b[nz])[0, 1]) if nz.sum() > 2 else float("nan")
+    spear = float(np.corrcoef(_ranks(a[nz]), _ranks(b[nz]))[0, 1]) if nz.sum() > 2 else float("nan")
+    both = (a > 0) & (b > 0)
+    jac = float(both.sum() / max(((a > 0) | (b > 0)).sum(), 1))
+    k = min(top, int((a > 0).sum()), int((b > 0).sum()))
+    ta = set(np.argsort(-a, kind="mergesort")[:k])
+    tb = set(np.argsort(-b, kind="mergesort")[:k])
+    return {
+        "n_regions": len(A),
+        "total_A": float(a.sum()),
+        "total_B": float(b.sum()),
+        "total_ratio_B_over_A": float(b.sum() / a.sum()) if a.sum() else float("nan"),
+        "pearson_r": pear,
+        "spearman_r": spear,
+        "edge_jaccard": jac,
+        f"top{k}_overlap": float(len(ta & tb) / k) if k else float("nan"),
+        "identical": bool(np.array_equal(A, B)),
+    }
+
+
+def cmd_compare(args) -> int:
+    ra, rb = read_mat4(args.mat), read_mat4(args.mat2)
+    for path, r in ((args.mat, ra), (args.mat2, rb)):
+        if args.measure not in r:
+            raise SystemExit(f"'{args.measure}' bulunamadi: {path}")
+    A, B = ra[args.measure].data.copy(), rb[args.measure].data.copy()
+    res = compare_matrices(A, B, args.top)
+    for k, v in res.items():
+        print(f"{k:28s} {v}")
+    if args.atlas_dir:
+        _, _, names = load_atlas(Path(args.atlas_dir), args.atlas)
+        nl = [names.get(i, f"R{i}") for i in range(1, len(A) + 1)]
+        for tag, M in (("A", A), ("B", B)):
+            _, summ = node_metrics(M.copy(), nl)
+            print(f"interhemispheric_fraction_{tag}  {summ['interhemispheric_fraction']:.4f}")
+    print("\nYorum: Pearson guclu baglantilar tarafindan belirlenir; Spearman ve edge_jaccard zayif "
+          "(az trakt iceren) baglantilara da duyarlidir ve iki ayri izleme kosusunda dogal olarak daha dusuk cikar. "
+          "Esdegerligi yorumlamak icin ayni yontemi iki kez calistirip (test-tekrar) aradaki farkla kiyaslayin.")
+    return 0
+
+
 # --------------------------------------------------------------------------- cli
 def build_parser():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -318,6 +377,15 @@ def build_parser():
     sp.add_argument("--tt", required=True, help="DSI Studio .tt.gz (yaninda .tt.gz.txt varsa demet adlari okunur)")
     sp.add_argument("--top", type=int, default=8, help="komisural olmayan en buyuk N demet de listelenir")
     sp.set_defaults(fn=cmd_qc)
+
+    sp = sub.add_parser("compare", help="iki baglanti matrisini karsilastir")
+    sp.add_argument("--mat", required=True, help="Referans matris (A), orn. tam yol")
+    sp.add_argument("--mat2", required=True, help="Karsilastirilan matris (B), orn. hizli yol")
+    sp.add_argument("--measure", default=DEFAULT_MEASURE)
+    sp.add_argument("--top", type=int, default=400)
+    sp.add_argument("--atlas-dir", help="Verilirse sol-sag (interhemisferik) pay da yazilir")
+    sp.add_argument("--atlas", default="HCP-MMP")
+    sp.set_defaults(fn=cmd_compare)
 
     sp = sub.add_parser("metrics", help="dugum metrikleri CSV")
     common(sp, plot=True)

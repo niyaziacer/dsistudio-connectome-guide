@@ -99,3 +99,20 @@ def test_missing_file_gives_friendly_error(tmp_path, capsys):
     rc = ct.main(["inspect", "--mat", str(tmp_path / "yok.mat")])
     err = capsys.readouterr().err
     assert rc == 2 and "gercek.mat" in err
+
+
+def test_compare_identical_and_noisy(data, tmp_path):
+    A, mat, _ = data
+    r = ct.compare_matrices(A, A.copy())
+    assert r["identical"] and r["pearson_r"] == pytest.approx(1.0)
+    rng = np.random.default_rng(5)
+    B = np.triu(A + rng.normal(0, 1, A.shape), 1)
+    B = np.clip(B + B.T, 0, None)
+    r2 = ct.compare_matrices(A, B)
+    assert not r2["identical"] and 0.9 < r2["pearson_r"] < 1.0
+
+
+def test_compare_cli(data, tmp_path, capsys):
+    _, mat, _ = data
+    assert ct.main(["compare", "--mat", str(mat), "--mat2", str(mat)]) == 0
+    assert "pearson_r" in capsys.readouterr().out

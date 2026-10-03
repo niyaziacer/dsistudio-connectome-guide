@@ -18,7 +18,7 @@ Example prefix `s05` (use your own).
 | 1 | `s05_autotrack_99bundles.tt.gz` | DSI Studio: *Recognize and Cluster* → *Tracts > Save All Tracts As* |
 | 2 | `s05_autotrack_99bundles.tt.gz.txt` | Written **automatically** by DSI Studio next to the `.tt.gz` (bundle names/indices) |
 | 3 | `s05_connectome_HCP-MMP_ntracts.mat` | DSI Studio: *Tracts > Connectivity matrix* → *Save matrix* |
-| 4 | `s05_HCP-MMP_connectivity_for_graph.mat` | **Script** (`graphmat`) — contains the matrix named `connectivity` that Visualize Graph requires |
+| 4 | `s05_HCP-MMP_connectivity_for_graph.mat` | **Not needed** with the new DSI Studio build (*Save matrix* already writes `connectivity`). With an older build the **script** (`graphmat`) creates it |
 | 5 | `s05_connectome_nodes_edges_2D.png` | **Script** (`plot`) — 3 views, nodes + edges |
 | 6 | `s05_connectome_nodes_edges_3D.png` | **Script** (`plot`) |
 
@@ -42,22 +42,26 @@ Tested with 175,693 tracts → 99 bundles → 360×360 matrix. Screenshots are i
 6. **Tracts > Save All Tracts As…** → `s05_autotrack_99bundles.tt.gz` (the `.tt.gz.txt` sidecar appears automatically). Do this *before* merging.
 7. **Tracts > Merge All** → one row. *The connectivity matrix is computed from the selected row only*; without merging you get a very sparse matrix from a few hundred tracts.
 8. **Tracts > Connectivity matrix:** *Parcellation Atlas* = **HCP-MMP** (the drop-down is easy to mis-click — verify), *pass region*, *value: number of tracts* → **Recalculate** → **Save matrix** → `s05_connectome_HCP-MMP_ntracts.mat`. DSI Studio's save dialog may suggest its own name (e.g. `Commissure_CorpusCallosum_Body_HCP-MMP.mat`); it comes from the name of the merged row and the matrix is still computed from all tracts. Rename it if you like, and use whatever name you saved under in `--mat` in step 9.
-9. **Run the script** (below) → graph `.mat` + 2D/3D PNGs.
-10. **Tracts > Visualize Graph…** → pick `s05_HCP-MMP_connectivity_for_graph.mat`. In *Step T3c: Options* tick **Region Rendering**, untick **Tract Rendering**.
+9. **Run the script** (below) → 2D/3D PNGs (and, on an older DSI Studio build, the graph `.mat` for Visualize Graph).
+10. **Tracts > Visualize Graph…** → on the new build pick the `.mat` you saved in step 8 **directly**; on an older build pick `s05_HCP-MMP_connectivity_for_graph.mat`. In *Step T3c: Options* tick **Region Rendering**, untick **Tract Rendering**.
 
-**Why the script?** In this build the saved matrix file lacks the `connectivity` matrix that Visualize Graph needs ("Cannot find a matrix named connectivity"). `graphmat` rewrites `number of tracts r2r` under that name in DSI Studio's MATLAB v4 format (it matched a hand-made file byte-for-value on real data).
+**Why the script?** In the Hou Jul 25 2026 build the saved matrix file lacks the `connectivity` matrix that Visualize Graph needs ("Cannot find a matrix named connectivity"). `graphmat` rewrites `number of tracts r2r` under that name in DSI Studio's MATLAB v4 format (it matched a hand-made file byte-for-value on real data).
+
+> **Fixed upstream.** We reported this to the DSI Studio developer ([frankyeh/DSI-Studio#131](https://github.com/frankyeh/DSI-Studio/issues/131)). Root cause, as explained there: the save format was extended to write every per-metric `r2r`/`t2r` matrix, and the legacy `connectivity` entry that Visualize Graph reads was dropped. The fix is on `master`: newer builds also write the **currently selected metric** under the name `connectivity` when you press *Save matrix*, so Visualize Graph opens the file directly. **Verified with the build downloaded on 3 October 2026:** the raw *Save matrix* file opened in Visualize Graph without running the script. It contains 137 matrices (136 in the older build) and `connectivity` is identical to `number of tracts r2r`, the selected metric. Make sure the metric you want (*number of tracts*) is selected before saving. If an older build gives you the error, use the script. The script is still needed for the **2D/3D pictures** (side, front, top views), node metrics and comparisons.
+>
+> Convenience: `graphmat-surukle-birak.bat` — drag the `.mat` onto it and `<name>_for_graph.mat` appears next to it (needs Python on PATH; not yet widely tested on Windows).
 
 ## Fast route (shorter)
 
 Skip steps 4–7 and compute the matrix directly from the `whole_brain` row (steps 8–10). Step 3 should not be needed for the matrix, but I have not tried skipping it.
 
 - **Why it should give the same matrix:** in `s05`, Recognize and Cluster assigned **all** 175,693 tracts to one of the 99 bundles (the `cluster` field in the `.tt.gz` is 0–98, none unassigned), and Merge All puts them back together, so the tract set is the same as `whole_brain`.
-- **Verification status:** worked directly on `whole_brain` with the Brainnectome atlas; **not tested separately in the GUI with HCP-MMP** (the equivalence above is logical). Please report results via an issue.
+- **Verification status:** tested in the GUI with HCP-MMP on the same `s05` data (steps 4–7 skipped; step 3 done). The full-route and fast-route matrices come from **two separate tracking runs**, so they are not identical; `compare` gave: total-weight ratio 0.996, Pearson r = 0.995, 93 % overlap of the strongest 400 edges, interhemispheric share 2.43 % vs 2.36 %. Spearman (0.89) and edge Jaccard (0.74) were lower; the difference sits in weak (low-streamline-count) edges. **Test-retest control:** running the fast route a second time with fresh tracking (on a different DSI Studio build) gave a difference between the two fast matrices of the same size as between full and fast route (Pearson 0.9955 / 0.9952; Spearman 0.888 / 0.889; Jaccard 0.735 / 0.736; strongest-400 overlap 0.935 / 0.932). So the difference seems to come from tracking randomness rather than from the skipped steps, and the fast route gave the same result as the full route on this data. Limits: one subject; the second run used a different build, so a build effect cannot be separated from a tracking effect; many weak edges change from run to run, so be careful with binary (present/absent) graph metrics.
 - **What you lose:** files 1–2 (the 99-bundle `.tt.gz` + `.tt.gz.txt`), which the `qc` command and bundle-level analyses need.
 
 ## Script usage
 
-The script turns the `.mat` saved by DSI Studio into the graph file and 2D/3D images. **In Windows PowerShell**, first edit only the paths in the 4 lines below (`USER` and the file name), then paste the commands **as they are**.
+The script turns the `.mat` saved by DSI Studio into 2D/3D images (and, for older builds, the graph file). **In Windows PowerShell**, first edit only the paths in the 4 lines below (`USER` and the file name), then paste the commands **as they are**.
 
 ```powershell
 # 1) Edit these 4 lines for your machine
@@ -84,6 +88,7 @@ python scripts\connectome_tools.py graphmat --mat $mat --prefix s05             
 python scripts\connectome_tools.py plot     --mat $mat --atlas-dir $atlas --prefix s05   # only the 2D/3D images
 python scripts\connectome_tools.py metrics  --mat $mat --atlas-dir $atlas --prefix s05   # node metrics CSV
 python scripts\connectome_tools.py qc       --tt $tt                                     # tract/bundle QC
+python scripts\connectome_tools.py compare  --mat $mat --mat2 $mat2 --atlas-dir $atlas    # compare two matrices ($mat2: second .mat)
 ```
 
 **Linux / macOS / Git Bash** (a trailing `\` is bash syntax):

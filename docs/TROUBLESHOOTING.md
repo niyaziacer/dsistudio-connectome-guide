@@ -4,7 +4,7 @@
 |---|---|---|
 | Matris çok seyrek, toplam trakt birkaç yüz | Konnektivite matrisi yalnızca **seçili tract satırından** hesaplanır / only the selected row is used | `Save All Tracts As` ile yedek alın, **Tracts > Merge All**, matrisi yeniden **Recalculate** |
 | Matris 360×360 değil | Yanlış atlas seçildi (liste kayar, ör. Brodmann) / wrong atlas | Listeyi tekrar açıp seçili adı okuyun, **HCP-MMP**'yi seçin, Recalculate |
-| *Cannot find a matrix named connectivity* | Bu sürümde *Save matrix* dosyasında `connectivity` adlı matris yok | `python scripts/connectome_tools.py graphmat --mat X.mat --prefix s05` ile üretilen dosyayı Visualize Graph'a verin |
+| *Cannot find a matrix named connectivity* | Eski DSI Studio derlemelerinde (ör. Hou Jul 25 2026) *Save matrix* dosyasında `connectivity` adlı matris yok. Düzeltme DSI Studio `master`ında ([issue #131](https://github.com/frankyeh/DSI-Studio/issues/131)); yeni derlemeler seçili metriği `connectivity` adıyla da yazar | Yeni derleme kullanın ve kaydetmeden önce istediğiniz metriği seçin; ya da eski derlemede `python scripts/connectome_tools.py graphmat --mat X.mat --prefix s05` (veya `graphmat-surukle-birak.bat`) ile üretilen dosyayı Visualize Graph'a verin |
 | Visualize Graph "bir şey olmuyor" | Graph sessizce yüklenir; görünürlük ayarlarına bağlı | *Step T3c*: **Region Rendering ✔**, **Tract Rendering ☐** (isteğe bağlı Slice Rendering ✔) |
 | `connectome_tools.py plot`: "Atlas N bölgeli, matris M×M" | Matris farklı atlastan | DSI Studio'da matrisi **HCP-MMP** ile yeniden hesaplayın; `--atlas`/`--atlas-dir` doğru mu? |
 | `Atlas dosyaları yok` | `--atlas-dir` yanlış | `<dsi_studio>/atlas/human` klasörünü verin (`HCP-MMP.nii.gz` + `.txt`) |
